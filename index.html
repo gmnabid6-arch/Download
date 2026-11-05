@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Link to File</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9eef3;--panel:#fff;--ink:#12202e;--muted:#5b6b7b;--line:#cfd8e1;--accent:#1f5eff;--accent-ink:#fff;--ok:#0b7a4b;--err:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1620;--panel:#16212d;--ink:#e8eef4;--muted:#93a3b3;--line:#2a3948;--accent:#6f9bff;--accent-ink:#0e1620;--ok:#5fd39a;--err:#ff8b84}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;min-height:100vh;display:grid;place-items:start center;padding:32px 16px}
+main{width:100%;max-width:640px}
+h1{font-size:clamp(2rem,6vw,3rem);font-weight:800;margin:0 0 6px;letter-spacing:-.02em}
+p.sub{margin:0 0 24px;color:var(--muted);font-size:1.05rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+label{display:block;font-weight:600;margin:0 0 8px}
+input[type=url],input[type=text],select{width:100%;font:inherit;color:var(--ink);background:transparent;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px}
+input:focus,select:focus,button:focus-visible,.chip input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+.group{margin-top:20px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip input{position:absolute;opacity:0}
+.chip span{display:inline-block;padding:9px 16px;border:1.5px solid var(--line);border-radius:999px;cursor:pointer;font-weight:600;user-select:none}
+.chip input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.hint{color:var(--muted);font-size:.9rem;margin:8px 0 0}
+button.go{margin-top:22px;width:100%;font:inherit;font-weight:800;font-size:1.1rem;padding:14px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.go:disabled{opacity:.6;cursor:wait}
+#status{margin-top:14px;min-height:1.4em;font-weight:600}
+#status.ok{color:var(--ok)}#status.err{color:var(--err)}
+details{margin-top:18px;color:var(--muted)}
+summary{cursor:pointer;font-weight:600}
+details .row{margin-top:10px}
+footer{margin-top:20px;color:var(--muted);font-size:.85rem}
+@media (prefers-reduced-motion:no-preference){button.go{transition:transform .1s}button.go:active{transform:scale(.99)}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Link to file</h1>
+  <p class="sub">Paste a video link, pick a format, download.</p>
+
+  <div class="panel">
+    <label for="url">Video link</label>
+    <input id="url" type="url" placeholder="https://..." autocomplete="off">
+
+    <div class="group">
+      <label>Video</label>
+      <div class="chips" id="vid">
+        <label class="chip"><input type="radio" name="fmt" value="mp4" checked><span>MP4</span></label>
+        <label class="chip"><input type="radio" name="fmt" value="webm"><span>WEBM</span></label>
+      </div>
+    </div>
+
+    <div class="group">
+      <label>Audio</label>
+      <div class="chips" id="aud">
+        <label class="chip"><input type="radio" name="fmt" value="mp3"><span>MP3</span></label>
+        <label class="chip"><input type="radio" name="fmt" value="m4a"><span>M4A (Instagram voice)</span></label>
+        <label class="chip"><input type="radio" name="fmt" value="wav"><span>WAV</span></label>
+        <label class="chip"><input type="radio" name="fmt" value="ogg"><span>OGG</span></label>
+        <label class="chip"><input type="radio" name="fmt" value="flac"><span>FLAC</span></label>
+        <label class="chip"><input type="radio" name="fmt" value="aac"><span>AAC</span></label>
+      </div>
+      <p class="hint">M4A (AAC) is the format phones use for voice messages, so it is the best pick for Instagram.</p>
+    </div>
+
+    <div class="group">
+      <label for="q">Quality</label>
+      <select id="q">
+        <option value="best">Best available</option>
+        <option value="1080">1080p / high audio</option>
+        <option value="720">720p / medium audio</option>
+        <option value="480">480p / low audio</option>
+      </select>
+    </div>
+
+    <button class="go" id="go">Download</button>
+    <div id="status" role="status" aria-live="polite"></div>
+
+    <details>
+      <summary>Server settings</summary>
+      <div class="row">
+        <label for="api">Backend address</label>
+        <input id="api" type="text" placeholder="https://your-server.example.com">
+        <p class="hint">GitHub Pages only hosts this page. The converter runs on your own server (see server.py).</p>
+      </div>
+    </details>
+  </div>
+
+  <footer>Only download content you own or have permission to use.</footer>
+</main>
+
+<script>
+// Set your backend address here once you deploy it, or type it in "Server settings".
+const DEFAULT_API = "";
+
+const $ = id => document.getElementById(id);
+const status = (msg, cls = "") => { const s = $("status"); s.textContent = msg; s.className = cls; };
+
+try { $("api").value = localStorage.getItem("api") || DEFAULT_API; } catch (e) { $("api").value = DEFAULT_API; }
+$("api").addEventListener("change", () => { try { localStorage.setItem("api", $("api").value.trim()); } catch (e) {} });
+
+$("go").addEventListener("click", async () => {
+  const url = $("url").value.trim();
+  const api = $("api").value.trim().replace(/\/+$/, "");
+  const format = document.querySelector('input[name="fmt"]:checked').value;
+  const quality = $("q").value;
+
+  if (!/^https?:\/\//i.test(url)) return status("Paste a valid link that starts with http or https.", "err");
+  if (!api) return status("Add your backend address in Server settings first.", "err");
+
+  $("go").disabled = true;
+  status("Working on it. This can take a minute for long videos.");
+  try {
+    const res = await fetch(api + "/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, format, quality })
+    });
+    if (!res.ok) {
+      let msg = "The server could not process this link.";
+      try { msg = (await res.json()).error || msg; } catch (e) {}
+      throw new Error(msg);
+    }
+    const cd = res.headers.get("Content-Disposition") || "";
+    const m = cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    const name = m ? decodeURIComponent(m[1]) : "download." + format;
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    status("Done. Your file is downloading.", "ok");
+  } catch (e) {
+    status(e.message || "Could not reach the server.", "err");
+  } finally {
+    $("go").disabled = false;
+  }
+});
+</script>
+</body>
+</html>
